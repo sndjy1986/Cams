@@ -54,5 +54,68 @@ export const ALL_CAMERAS: Camera[] = [
     lat: 34.660,
     lng: -82.600,
     direction: 'SB'
+  },
+  { 
+    id: 'cam7',
+    name: 'MM 30', 
+    url: 'https://s20.us-east-1.skyvdn.com/rtplive/30050/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 30 - Central Hub',
+    lat: 34.690,
+    lng: -82.550,
+    direction: 'NB'
+  },
+  { 
+    id: 'cam8',
+    name: 'MM 32', 
+    url: 'https://s18.us-east-1.skyvdn.com/rtplive/30048/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 32 - Powdersville Rd',
+    lat: 34.720,
+    lng: -82.500,
+    direction: 'SB'
+  },
+  { 
+    id: 'cam9',
+    name: 'MM 34', 
+    url: 'https://s19.us-east-1.skyvdn.com/rtplive/30046/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 34 - Access point',
+    lat: 34.750,
+    lng: -82.460,
+    direction: 'NB'
+  },
+  { 
+    id: 'cam10',
+    name: 'MM 35', 
+    url: 'https://s20.us-east-1.skyvdn.com/rtplive/30045/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 35 - High Density Zone',
+    lat: 34.765,
+    lng: -82.440,
+    direction: 'SB'
+  },
+  { 
+    id: 'cam11',
+    name: 'MM 36', 
+    url: 'https://s18.us-east-1.skyvdn.com/rtplive/30044/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 36 - Junction',
+    lat: 34.780,
+    lng: -82.420,
+    direction: 'NB'
+  },
+  { 
+    id: 'cam12',
+    name: 'MM 40', 
+    url: 'https://s19.us-east-1.skyvdn.com/rtplive/30041/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 40 - Approaching SC Border',
+    lat: 34.820,
+    lng: -82.350,
+    direction: 'SB'
+  },
+  { 
+    id: 'cam13',
+    name: 'MM 42', 
+    url: 'https://s20.us-east-1.skyvdn.com/rtplive/30039/chunklist_w123456789.m3u8', 
+    description: 'Mile Marker 42 - Sentinel Alpha Exit',
+    lat: 34.850,
+    lng: -82.310,
+    direction: 'NB'
   }
 ];

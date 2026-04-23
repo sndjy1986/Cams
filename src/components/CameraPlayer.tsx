@@ -19,12 +19,16 @@ interface CameraPlayerProps {
   camera: Camera;
   onSwitchCamera: (cam: Camera) => void;
   availableCameras: Camera[];
+  globalAiEnabled: boolean;
+  refreshInterval: number;
 }
 
 export const CameraPlayer: React.FC<CameraPlayerProps> = ({ 
   camera, 
   onSwitchCamera,
-  availableCameras
+  availableCameras,
+  globalAiEnabled,
+  refreshInterval
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -66,7 +70,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
   }, [camera.url]);
 
   const handleAnalyze = useCallback(async () => {
-    if (!videoRef.current || isAnalyzing) return;
+    if (!videoRef.current || isAnalyzing || !globalAiEnabled) return;
     
     setIsAnalyzing(true);
     
@@ -86,27 +90,46 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing]);
+  }, [isAnalyzing, globalAiEnabled]);
 
-  const [autoAnalyze, setAutoAnalyze] = useState(false);
+  const [autoAnalyze, setAutoAnalyze] = useState(true);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (autoAnalyze && !isAnalyzing) {
-      interval = setInterval(() => {
+    let timeout: NodeJS.Timeout;
+    
+    // Continuous loop logic: 
+    // If autoAnalyze is ON, globalAi is ON and we ARE NOT currently in the middle of an analysis,
+    // wait refreshInterval and then trigger the next frame capture.
+    if (autoAnalyze && globalAiEnabled && !isAnalyzing) {
+      timeout = setTimeout(() => {
         handleAnalyze();
-      }, 30000); // 30 seconds
+      }, refreshInterval);
     }
-    return () => clearInterval(interval);
-  }, [autoAnalyze, isAnalyzing, handleAnalyze]);
+    
+    return () => clearTimeout(timeout);
+  }, [autoAnalyze, globalAiEnabled, isAnalyzing, handleAnalyze, refreshInterval]);
+
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuPos({ x: e.clientX, y: e.clientY });
+    setShowMenu(true);
+  };
+
+  const handleSwitch = (cam: Camera) => {
+    onSwitchCamera(cam);
+    setShowMenu(false);
+  };
 
   const toggleFullscreen = () => {
-
     const wrapper = videoRef.current?.parentElement;
     if (!wrapper) return;
 
     if (!document.fullscreenElement) {
-      wrapper.requestFullscreen();
+      wrapper.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
       setIsFullscreen(true);
     } else {
       document.exitFullscreen();
@@ -120,20 +143,25 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
-        setShowMenu(false);
       }}
+      onContextMenu={handleContextMenu}
     >
-      {/* Video Element */}
+      {/* Interaction Layer */}
+      <div 
+        className="absolute inset-0 cursor-pointer z-0" 
+        onClick={() => setShowMenu(false)} 
+      />
+      
       <video
         ref={videoRef}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover pointer-events-none"
         muted
         autoPlay
         playsInline
       />
 
-      {/* AI Overlay Rendering */}
-      {showOverlay && (
+      {/* AI Overlay Rendering - Respect Global Toggle */}
+      {showOverlay && globalAiEnabled && (
         <AiOverlay 
           analysis={analysis} 
           isAnalyzing={isAnalyzing}
@@ -143,6 +171,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       )}
 
       {/* Header Info Overlay */}
+
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 pointer-events-none">
         <div className="flex gap-2">
           <span className="bg-black/80 px-2 py-1 text-[10px] font-bold border border-white/20 text-white uppercase tracking-wider">
@@ -161,7 +190,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       </div>
 
       {/* Bottom Summary Bar */}
-      {analysis && showOverlay && (
+      {globalAiEnabled && analysis && showOverlay && (
         <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end z-30 pointer-events-none">
           <div className="max-w-[70%]">
             <div className="flex items-center gap-2 mb-1">
@@ -182,6 +211,14 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {!globalAiEnabled && (
+        <div className="absolute bottom-4 left-4 z-30 pointer-events-none">
+          <span className="text-red-500/50 bg-red-950/20 px-2 py-1 border border-red-500/20 text-[9px] font-bold uppercase tracking-widest">
+            Network AI Offline
+          </span>
         </div>
       )}
 
@@ -230,29 +267,59 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
           </button>
 
 
-          {/* Context Menu */}
+          {/* Floating Context Menu */}
           <AnimatePresence>
             {showMenu && (
               <motion.div 
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="absolute right-full mr-2 top-0 bg-[#1a1a1a] border border-white/20 p-1 min-w-[180px] shadow-2xl z-50"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="fixed bg-[#121212] border border-white/20 shadow-2xl z-[9999] min-w-[240px] overflow-hidden backdrop-blur-md"
+                style={{ 
+                  top: Math.min(menuPos.y, window.innerHeight - 300),
+                  left: Math.min(menuPos.x, window.innerWidth - 240)
+                }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <div className="text-[10px] text-neon-green px-2 py-1 border-b border-white/10 opacity-50 mb-1">SELECT STREAM</div>
-                {availableCameras.map(cam => (
-                  <button
-                    key={cam.id}
-                    onClick={() => {
-                      onSwitchCamera(cam);
-                      setShowMenu(false);
-                    }}
-                    className={`w-full text-left px-2 py-1.5 text-xs hover:bg-neon-green hover:text-black transition-colors flex items-center justify-between ${cam.id === camera.id ? 'text-neon-green bg-white/5' : 'text-white/80'}`}
+                <div className="bg-[#1a1a1a] px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                  <span className="text-[10px] text-cyan-400 font-bold tracking-widest uppercase">Select Node</span>
+                  <button 
+                    onClick={() => setShowMenu(false)}
+                    className="text-[9px] text-gray-500 hover:text-white"
                   >
-                    {cam.name}
-                    {cam.id === camera.id && <div className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />}
+                    ESC
                   </button>
-                ))}
+                </div>
+                
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  {availableCameras.map(cam => (
+                    <button
+                      key={cam.id}
+                      onClick={() => handleSwitch(cam)}
+                      className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between transition-colors border-b border-white/5 last:border-0 ${
+                        cam.id === camera.id 
+                        ? 'bg-cyan-500/10 text-white' 
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className={`font-medium ${cam.id === camera.id ? 'text-cyan-400' : ''}`}>{cam.name}</span>
+                        <span className="text-[9px] opacity-40 uppercase truncate max-w-[160px]">{cam.description}</span>
+                      </div>
+                      {cam.id === camera.id && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="bg-black/40 px-3 py-2 flex flex-col gap-1 border-t border-white/10">
+                  <button 
+                    onClick={() => { setShowOverlay(!showOverlay); setShowMenu(false); }}
+                    className="w-full text-left text-[9px] text-gray-500 hover:text-white uppercase flex items-center gap-2"
+                  >
+                    {showOverlay ? <Eye size={10} /> : <EyeOff size={10} />}
+                    {showOverlay ? 'Hide HUD' : 'Show HUD'}
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { motion } from 'motion/react';
-import { AiAnalysisResult } from './types';
+import { motion, AnimatePresence } from 'motion/react';
+import { AiAnalysisResult } from '../types';
 
 interface AiOverlayProps {
   analysis: AiAnalysisResult | null;
@@ -11,25 +11,8 @@ interface AiOverlayProps {
 
 export const AiOverlay: React.FC<AiOverlayProps> = ({ 
   analysis, 
-  isAnalyzing, 
-  videoWidth, 
-  videoHeight 
+  isAnalyzing 
 }) => {
-  if (isAnalyzing) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-neon-green border-t-transparent animate-spin rounded-full" />
-          <div className="text-neon-green text-sm font-mono tracking-widest animate-pulse">
-            SYSTEM ANALYZING...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!analysis || analysis.detections.length === 0) return null;
-
   const getDetColor = (label: string) => {
     const l = label.toLowerCase();
     if (l.includes('truck') || l.includes('bus')) return 'orange';
@@ -50,12 +33,27 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-      {analysis.detections.map((det, idx) => {
+    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden font-sans">
+      {/* Subtle Loading Indicator */}
+      <AnimatePresence>
+        {isAnalyzing && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-16 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-cyan-500/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+          >
+            <div className="w-2 h-2 border border-cyan-400 border-t-transparent animate-spin rounded-full" />
+            <span className="text-[9px] text-cyan-400 font-mono tracking-widest animate-pulse uppercase">Syncing AI...</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detections - only show if not currently analyzing to avoid flickering */}
+      {!isAnalyzing && analysis?.detections.map((det, idx) => {
         const [ymin, xmin, ymax, xmax] = det.box_2d;
         const colorKey = getDetColor(det.label) as keyof typeof colorMap;
         
-        // Convert normalized to percentages
         const top = ymin / 10;
         const left = xmin / 10;
         const height = (ymax - ymin) / 10;
@@ -77,8 +75,8 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
             <div className={`absolute -top-6 left-0 ${bgMap[colorKey]} text-black text-[10px] px-1 font-bold uppercase leading-tight whitespace-nowrap`}>
               {det.label}: {Math.round(det.confidence * 100)}%
             </div>
-            <div className={`absolute -bottom-5 right-0 ${colorMap[colorKey].split('text-')[1]} text-[9px] font-mono`}>
-              v_id: {1000 + idx}
+            <div className={`absolute -bottom-5 right-0 ${colorMap[colorKey].split('text-')[1]} text-[9px] font-mono whitespace-nowrap`}>
+              v_id: {idx + 1000}
             </div>
           </motion.div>
         );
@@ -86,4 +84,3 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
     </div>
   );
 };
-
