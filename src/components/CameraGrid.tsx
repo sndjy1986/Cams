@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Camera } from '../types';
 import { ALL_CAMERAS } from '../constants';
 import { CameraPlayer } from './CameraPlayer';
-import { LayoutGrid, Columns3 } from 'lucide-react';
+import { LayoutGrid, Columns3, RefreshCw } from 'lucide-react';
 
 export const CameraGrid: React.FC = () => {
   const [gridSize, setGridSize] = useState<4 | 6>(4);

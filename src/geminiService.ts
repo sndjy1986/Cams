@@ -11,6 +11,7 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
     return {
       detections: [],
       summary: "EMPTY SIGNAL SOURCE",
+      flow: 'LOW',
       timestamp: new Date().toLocaleTimeString(),
     };
   }
@@ -82,6 +83,7 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
     return {
       detections: [],
       summary: "AI ANALYSIS ERROR",
+      flow: 'LOW',
       timestamp: new Date().toLocaleTimeString(),
     };
   }
