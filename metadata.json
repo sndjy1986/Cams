@@ -1,0 +1,6 @@
+{
+  "name": "Quad-Stream AI Monitor",
+  "description": "Multi-stream traffic camera monitor with AI-powered object detection and technical overlay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
