@@ -4,6 +4,17 @@ import { AiAnalysisResult } from "./types";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResult> {
+  const parts = base64Image.split(',');
+  const data = parts.length > 1 ? parts[1] : base64Image;
+
+  if (!data || data.length < 100) {
+    return {
+      detections: [],
+      summary: "EMPTY SIGNAL SOURCE",
+      timestamp: new Date().toLocaleTimeString(),
+    };
+  }
+
   const prompt = `
     Analyze this traffic camera frame. 
     1. Detect all vehicles (cars, trucks, buses, motorcycles).
@@ -14,7 +25,7 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: [
         {
           parts: [
@@ -22,7 +33,7 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
             {
               inlineData: {
                 mimeType: "image/jpeg",
-                data: base64Image.split(',')[1], // Remove potential prefix
+                data: data,
               },
             },
           ],

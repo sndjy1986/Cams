@@ -38,24 +38,66 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const errorCountRef = useRef(0);
 
   useEffect(() => {
+    setHasError(false);
+    errorCountRef.current = 0;
+    
     if (videoRef.current) {
       if (hlsRef.current) {
         hlsRef.current.destroy();
       }
 
       if (Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 60,
+          manifestLoadingMaxRetry: 3,
+          levelLoadingMaxRetry: 3,
+        });
+
         hls.loadSource(camera.url);
         hls.attachMedia(videoRef.current);
         hlsRef.current = hls;
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setHasError(false);
+          errorCountRef.current = 0;
           videoRef.current?.play().catch(e => console.error("Autoplay failed", e));
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            errorCountRef.current++;
+            if (errorCountRef.current > 5) {
+              console.error("Too many fatal errors, stopping node sync", camera.id);
+              setHasError(true);
+              hls.destroy();
+              return;
+            }
+
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.log("Network sync issue, attempting re-link...");
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log("Media sync issue, attempting recovery...");
+                hls.recoverMediaError();
+                break;
+              default:
+                setHasError(true);
+                hls.destroy();
+                break;
+            }
+          }
         });
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
         videoRef.current.src = camera.url;
+        videoRef.current.addEventListener('error', () => setHasError(true));
       }
     }
 
@@ -70,29 +112,35 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
   }, [camera.url]);
 
   const handleAnalyze = useCallback(async () => {
-    if (!videoRef.current || isAnalyzing || !globalAiEnabled) return;
+    const video = videoRef.current;
+    if (!video || isAnalyzing || !globalAiEnabled || hasError) return;
+    
+    // Ensure video has data and is ready for capture
+    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+      return;
+    }
     
     setIsAnalyzing(true);
     
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0);
+        ctx.drawImage(video, 0, 0);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         const result = await analyzeFrame(dataUrl);
         setAnalysis(result);
       }
     } catch (error) {
-      console.error("AI Analysis failed", error);
+      console.error("Node AI Logic Failed", error);
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, globalAiEnabled]);
+  }, [isAnalyzing, globalAiEnabled, hasError]);
 
-  const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [autoAnalyze, setAutoAnalyze] = useState(false);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -159,6 +207,31 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
         autoPlay
         playsInline
       />
+
+      {/* Signal Lost Overlay */}
+      {hasError && (
+        <div className="absolute inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center z-10 border-2 border-red-900/20">
+          <div className="w-16 h-1 w-1/2 bg-red-600/20 mb-4 overflow-hidden relative">
+            <motion.div 
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 bg-red-600 shadow-[0_0_10px_#dc2626]"
+            />
+          </div>
+          <span className="text-red-600 font-mono text-[10px] tracking-[0.3em] uppercase animate-pulse">
+            Terminal Signal Lost
+          </span>
+          <p className="text-gray-600 text-[8px] uppercase mt-2 font-mono">
+            Node ID: {camera.id} / ERR_STREAM_UNAVAILABLE
+          </p>
+          <button 
+            onClick={() => { setHasError(false); onSwitchCamera(camera); }}
+            className="mt-4 px-3 py-1 border border-white/10 text-[9px] text-gray-500 hover:text-white transition-colors"
+          >
+            RETRY SYNC
+          </button>
+        </div>
+      )}
 
       {/* AI Overlay Rendering - Respect Global Toggle */}
       {showOverlay && globalAiEnabled && (

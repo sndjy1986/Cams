@@ -7,7 +7,7 @@ import { LayoutGrid, Columns3 } from 'lucide-react';
 export const CameraGrid: React.FC = () => {
   const [gridSize, setGridSize] = useState<4 | 6>(4);
   const [activeCameras, setActiveCameras] = useState<Camera[]>(ALL_CAMERAS.slice(0, 6));
-  const [globalAiEnabled, setGlobalAiEnabled] = useState(true);
+  const [globalAiEnabled, setGlobalAiEnabled] = useState(false);
   const [refreshRate, setRefreshRate] = useState(15000); // Default 15s
 
   const handleSwitchCamera = (index: number, newCam: Camera) => {
