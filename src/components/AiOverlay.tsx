@@ -48,39 +48,6 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Detections - only show if not currently analyzing to avoid flickering */}
-      {!isAnalyzing && analysis?.detections.map((det, idx) => {
-        const [ymin, xmin, ymax, xmax] = det.box_2d;
-        const colorKey = getDetColor(det.label) as keyof typeof colorMap;
-        
-        const top = ymin / 10;
-        const left = xmin / 10;
-        const height = (ymax - ymin) / 10;
-        const width = (xmax - xmin) / 10;
-
-        return (
-          <motion.div
-            key={`${idx}-${det.label}`}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`absolute border-2 ${colorMap[colorKey].split(' text-')[0]}`}
-            style={{
-              top: `${top}%`,
-              left: `${left}%`,
-              width: `${width}%`,
-              height: `${height}%`,
-            }}
-          >
-            <div className={`absolute -top-6 left-0 ${bgMap[colorKey]} text-black text-[10px] px-1 font-bold uppercase leading-tight whitespace-nowrap`}>
-              {det.label}: {Math.round(det.confidence * 100)}%
-            </div>
-            <div className={`absolute -bottom-5 right-0 ${colorMap[colorKey].split('text-')[1]} text-[9px] font-mono whitespace-nowrap`}>
-              v_id: {idx + 1000}
-            </div>
-          </motion.div>
-        );
-      })}
     </div>
   );
 };

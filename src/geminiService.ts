@@ -21,6 +21,7 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
     2. Provide bounding boxes in [ymin, xmin, ymax, xmax] format (normalized 0-1000).
     3. Estimate confidence for each.
     4. Provide a brief summary of traffic conditions (e.g., "Heavy traffic southbound").
+    5. Estimate the traffic "flow" as one of: "LOW", "MODERATE", "HIGH", "STAMPEDE".
   `;
 
   try {
@@ -61,8 +62,12 @@ export async function analyzeFrame(base64Image: string): Promise<AiAnalysisResul
               },
             },
             summary: { type: Type.STRING },
+            flow: { 
+              type: Type.STRING,
+              enum: ["LOW", "MODERATE", "HIGH", "STAMPEDE"]
+            },
           },
-          required: ["detections", "summary"],
+          required: ["detections", "summary", "flow"],
         },
       },
     });

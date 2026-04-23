@@ -39,7 +39,13 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
   const [showOverlay, setShowOverlay] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [lastAnalysisTime, setLastAnalysisTime] = useState<number>(0);
   const errorCountRef = useRef(0);
+
+  const getCooldownRemaining = useCallback(() => {
+    const elapsed = Date.now() - lastAnalysisTime;
+    return Math.max(0, refreshInterval - elapsed);
+  }, [lastAnalysisTime, refreshInterval]);
 
   useEffect(() => {
     setHasError(false);
@@ -103,6 +109,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
     // Reset analysis when camera changes
     setAnalysis(null);
+    setLastAnalysisTime(0);
 
     return () => {
       if (hlsRef.current) {
@@ -115,6 +122,12 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
     const video = videoRef.current;
     if (!video || isAnalyzing || !globalAiEnabled || hasError) return;
     
+    // Check cooldown
+    if (lastAnalysisTime > 0 && getCooldownRemaining() > 0) {
+      console.log(`Node locked. ${Math.round(getCooldownRemaining() / 1000)}s until next sync.`);
+      return;
+    }
+
     // Ensure video has data and is ready for capture
     if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
       return;
@@ -132,30 +145,32 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         const result = await analyzeFrame(dataUrl);
         setAnalysis(result);
+        setLastAnalysisTime(Date.now());
       }
     } catch (error) {
       console.error("Node AI Logic Failed", error);
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, globalAiEnabled, hasError]);
-
-  const [autoAnalyze, setAutoAnalyze] = useState(false);
+  }, [isAnalyzing, globalAiEnabled, hasError, lastAnalysisTime, getCooldownRemaining]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     
-    // Continuous loop logic: 
-    // If autoAnalyze is ON, globalAi is ON and we ARE NOT currently in the middle of an analysis,
-    // wait refreshInterval and then trigger the next frame capture.
-    if (autoAnalyze && globalAiEnabled && !isAnalyzing) {
+    if (globalAiEnabled && !isAnalyzing) {
+      const remainingTime = getCooldownRemaining();
+      
+      // If cooldown is active, wait until it finishes
+      // If cooldown is 0 (ready), sync FAST
+      const delay = remainingTime > 0 ? remainingTime : 1000; // 1s buffer for initial load
+
       timeout = setTimeout(() => {
         handleAnalyze();
-      }, refreshInterval);
+      }, delay);
     }
     
     return () => clearTimeout(timeout);
-  }, [autoAnalyze, globalAiEnabled, isAnalyzing, handleAnalyze, refreshInterval]);
+  }, [globalAiEnabled, isAnalyzing, handleAnalyze, getCooldownRemaining, refreshInterval]);
 
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
@@ -258,7 +273,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
         <div className="flex flex-col items-end text-[9px] font-mono text-gray-400 bg-black/40 p-1 backdrop-blur-sm border border-white/5">
           <div>COORD: {camera.lat.toFixed(4)}° N, {Math.abs(camera.lng).toFixed(4)}° W</div>
-          <div className="text-cyan-400">FLOW: {analysis ? (analysis.detections.length > 5 ? 'HIGH DENSITY' : 'NORMAL') : 'CALCULATING...'}</div>
+          <div className="text-cyan-400">FLOW: {analysis ? analysis.flow : (isAnalyzing ? 'SYNCING...' : 'WAITING')}</div>
         </div>
       </div>
 
@@ -268,7 +283,10 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
           <div className="max-w-[70%]">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-cyan-400 bg-cyan-900/30 px-1.5 py-0.5 rounded text-[8px] font-bold border border-cyan-500/30 animate-pulse uppercase">
-                Detection Mode
+                Flow Analysis
+              </span>
+              <span className="text-white bg-black/60 px-1.5 py-0.5 rounded text-[8px] border border-white/10 uppercase">
+                {analysis.flow}
               </span>
             </div>
             <div className="text-white text-[11px] font-medium leading-tight drop-shadow-lg uppercase tracking-wide">
@@ -276,12 +294,19 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
             </div>
           </div>
           
-          <div className="h-10 w-20 bg-black/40 backdrop-blur-sm border border-white/10 p-1 flex flex-col justify-between">
-            <div className="text-[7px] uppercase text-gray-500 leading-none">Activity</div>
-            <div className="flex items-end gap-0.5 h-6">
-              {[0.4, 0.6, 0.9, 0.3, 0.7, 0.5, 0.8].map((h, i) => (
-                <div key={i} className="flex-1 bg-cyan-500/80" style={{ height: `${h * 100}%` }} />
-              ))}
+          <div className="h-10 w-24 bg-black/40 backdrop-blur-sm border border-white/10 p-1 flex flex-col justify-between">
+            <div className="text-[7px] uppercase text-gray-500 leading-none">Sync Window</div>
+            <div className="text-[10px] text-cyan-400 font-mono text-right">
+              {lastAnalysisTime > 0 && getCooldownRemaining() > 0 
+                ? `${Math.floor(getCooldownRemaining() / 60000)}m ${Math.floor((getCooldownRemaining() % 60000) / 1000)}s` 
+                : 'READY'}
+            </div>
+            <div className="w-full bg-white/5 h-1">
+              <motion.div 
+                initial={false}
+                animate={{ width: `${(1 - getCooldownRemaining() / refreshInterval) * 100}%` }}
+                className="h-full bg-cyan-500"
+              />
             </div>
           </div>
         </div>
@@ -297,23 +322,6 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
       {/* UI Controls */}
       <div className={`absolute right-4 top-16 flex flex-col gap-2 transition-opacity duration-300 z-40 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <button 
-          onClick={() => setAutoAnalyze(!autoAnalyze)}
-          className={`p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md ${autoAnalyze ? 'border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' : ''}`}
-          title="Toggle Auto-Analysis"
-        >
-          <RefreshCw className={autoAnalyze ? 'animate-spin' : ''} size={14} />
-        </button>
-
-        <button 
-          onClick={handleAnalyze}
-          disabled={isAnalyzing}
-          className="p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md"
-          title="Run AI Analysis"
-        >
-          <Cpu className={isAnalyzing ? 'animate-spin' : ''} size={14} />
-        </button>
-        
         <button 
           onClick={() => setShowOverlay(!showOverlay)}
           className={`p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md ${!showOverlay ? 'text-red-500' : ''}`}

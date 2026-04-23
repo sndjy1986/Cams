@@ -17,5 +17,6 @@ export interface Detection {
 export interface AiAnalysisResult {
   detections: Detection[];
   summary: string;
+  flow: 'LOW' | 'MODERATE' | 'HIGH' | 'STAMPEDE';
   timestamp: string;
 }

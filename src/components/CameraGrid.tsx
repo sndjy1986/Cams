@@ -8,7 +8,7 @@ export const CameraGrid: React.FC = () => {
   const [gridSize, setGridSize] = useState<4 | 6>(4);
   const [activeCameras, setActiveCameras] = useState<Camera[]>(ALL_CAMERAS.slice(0, 6));
   const [globalAiEnabled, setGlobalAiEnabled] = useState(false);
-  const [refreshRate, setRefreshRate] = useState(15000); // Default 15s
+  const REFRESH_RATE = 900000; // Hardcoded 15 min (900,000ms)
 
   const handleSwitchCamera = (index: number, newCam: Camera) => {
     setActiveCameras(prev => {
@@ -44,20 +44,13 @@ export const CameraGrid: React.FC = () => {
             </button>
           </div>
 
-          {/* Refresh Rate Selector */}
+          {/* Status Display */}
           <div className="flex flex-col gap-1 items-center">
-            <span className="text-[9px] opacity-60">Sync Rate</span>
-            <select 
-              value={refreshRate} 
-              onChange={(e) => setRefreshRate(Number(e.target.value))}
-              className="bg-black/40 border border-white/20 text-white text-[10px] px-2 py-1 outline-none focus:border-cyan-400 transition-colors"
-            >
-              <option value={5000}>5s (Rapid)</option>
-              <option value={10000}>10s (High)</option>
-              <option value={15000}>15s (Med)</option>
-              <option value={30000}>30s (Low)</option>
-              <option value={60000}>60s (Stale)</option>
-            </select>
+            <span className="text-[9px] opacity-60">Sync Cycle</span>
+            <div className="bg-black/40 border border-white/20 text-cyan-400 text-[10px] px-2 py-1 flex items-center gap-2">
+              <RefreshCw size={10} className="animate-spin" />
+              15M FIXED
+            </div>
           </div>
 
           <div className="flex flex-col">
@@ -94,7 +87,7 @@ export const CameraGrid: React.FC = () => {
             availableCameras={ALL_CAMERAS}
             onSwitchCamera={(newCam) => handleSwitchCamera(idx, newCam)}
             globalAiEnabled={globalAiEnabled}
-            refreshInterval={refreshRate}
+            refreshInterval={REFRESH_RATE}
           />
         ))}
       </main>
