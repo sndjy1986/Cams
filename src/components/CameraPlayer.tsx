@@ -156,20 +156,31 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    
-    if (globalAiEnabled && !isAnalyzing) {
-      const remainingTime = getCooldownRemaining();
-      
-      // If cooldown is active, wait until it finishes
-      // If cooldown is 0 (ready), sync FAST
-      const delay = remainingTime > 0 ? remainingTime : 1000; // 1s buffer for initial load
+    const checkAndSchedule = () => {
+      if (globalAiEnabled && !isAnalyzing) {
+        const remainingTime = getCooldownRemaining();
+        if (document.hidden) return;
+        
+        const delay = remainingTime > 0 ? remainingTime : 1000;
+        timeout = setTimeout(() => {
+          handleAnalyze();
+        }, delay);
+      }
+    };
 
-      timeout = setTimeout(() => {
-        handleAnalyze();
-      }, delay);
-    }
+    checkAndSchedule();
     
-    return () => clearTimeout(timeout);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkAndSchedule();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearTimeout(timeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [globalAiEnabled, isAnalyzing, handleAnalyze, getCooldownRemaining, refreshInterval]);
 
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
