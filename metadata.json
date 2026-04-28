@@ -1,6 +1,6 @@
 {
-  "name": "Quad-Stream AI Monitor",
-  "description": "Multi-stream traffic camera monitor with AI-powered object detection and technical overlay.",
+  "name": "SENTINEL",
+  "description": "AI-powered fixed-interval traffic flow analysis system.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

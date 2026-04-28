@@ -25,8 +25,8 @@ export const CameraGrid: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
           <div className="flex flex-col">
-            <h1 className="text-xl font-light tracking-widest uppercase leading-none">
-              AI Intelligence <span className="font-bold text-white">Sentinel V.4</span>
+            <h1 className="text-xl font-bold tracking-[0.3em] uppercase leading-none text-white">
+              SENTINEL
             </h1>
             <span className="text-[9px] text-cyan-400 font-mono tracking-tighter uppercase opacity-60">Global Network Monitor</span>
           </div>
