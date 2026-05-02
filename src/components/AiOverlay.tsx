@@ -17,19 +17,19 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
     const l = label.toLowerCase();
     if (l.includes('truck') || l.includes('bus')) return 'orange';
     if (l.includes('pedestrian') || l.includes('person')) return 'emerald';
-    return 'cyan';
+    return 'indigo';
   };
 
   const colorMap = {
-    cyan: 'border-cyan-400/70 shadow-[0_0_10px_rgba(34,211,238,0.5)] bg-cyan-400/10 text-cyan-400',
+    indigo: 'border-indigo-500/70 shadow-[0_0_10px_rgba(99,102,241,0.5)] bg-indigo-500/10 text-indigo-400',
     orange: 'border-orange-500/70 shadow-[0_0_10px_rgba(249,115,22,0.5)] bg-orange-500/10 text-orange-500',
-    emerald: 'border-emerald-400/70 shadow-[0_0_10px_rgba(52,211,153,0.5)] bg-emerald-400/10 text-emerald-400'
+    emerald: 'border-emerald-500/70 shadow-[0_0_10px_rgba(16,185,129,0.5)] bg-emerald-500/10 text-emerald-400'
   };
 
   const bgMap = {
-    cyan: 'bg-cyan-400',
+    indigo: 'bg-indigo-500',
     orange: 'bg-orange-500',
-    emerald: 'bg-emerald-400'
+    emerald: 'bg-emerald-500'
   };
 
   return (
@@ -41,10 +41,10 @@ export const AiOverlay: React.FC<AiOverlayProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-16 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md border border-cyan-500/30 px-2 py-1 rounded shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+            className="absolute top-20 left-6 flex items-center gap-3 bg-slate-900/60 backdrop-blur-xl border border-indigo-500/20 px-3 py-1.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
           >
-            <div className="w-2 h-2 border border-cyan-400 border-t-transparent animate-spin rounded-full" />
-            <span className="text-[9px] text-cyan-400 font-mono tracking-widest animate-pulse uppercase">Syncing AI...</span>
+            <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_10px_#6366f1]" />
+            <span className="text-[9px] text-indigo-400 font-black tracking-[0.2em] uppercase">Node Analyzing...</span>
           </motion.div>
         )}
       </AnimatePresence>

@@ -213,7 +213,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
   return (
     <div 
-      className="relative w-full h-full bg-black group overflow-hidden border border-white/10"
+      className="relative w-full h-full bg-slate-950 group overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -228,7 +228,7 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       
       <video
         ref={videoRef}
-        className="w-full h-full object-cover pointer-events-none"
+        className="w-full h-full object-cover pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-700"
         muted
         autoPlay
         playsInline
@@ -236,30 +236,30 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
 
       {/* Signal Lost Overlay */}
       {hasError && (
-        <div className="absolute inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center z-10 border-2 border-red-900/20">
-          <div className="w-16 h-1 w-1/2 bg-red-600/20 mb-4 overflow-hidden relative">
+        <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center z-10 border-2 border-red-500/20">
+          <div className="w-1/2 h-1 bg-red-950/40 mb-6 overflow-hidden relative rounded-full">
             <motion.div 
               animate={{ x: ['-100%', '100%'] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 bg-red-600 shadow-[0_0_10px_#dc2626]"
+              className="absolute inset-0 bg-red-500 shadow-[0_0_15px_#ef4444]"
             />
           </div>
-          <span className="text-red-600 font-mono text-[10px] tracking-[0.3em] uppercase animate-pulse">
+          <span className="text-red-500 font-black text-[12px] tracking-[0.4em] uppercase animate-pulse">
             Terminal Signal Lost
           </span>
-          <p className="text-gray-600 text-[8px] uppercase mt-2 font-mono">
-            Node ID: {camera.id} / ERR_STREAM_UNAVAILABLE
+          <p className="themed-label mt-3 opacity-50">
+            Node ID: {camera.id} / ERR_OFFLINE
           </p>
           <button 
             onClick={() => { setHasError(false); onSwitchCamera(camera); }}
-            className="mt-4 px-3 py-1 border border-white/10 text-[9px] text-gray-500 hover:text-white transition-colors"
+            className="mt-6 px-6 py-2 bg-red-500/10 border border-red-500/30 text-[10px] font-black text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-full tracking-widest"
           >
-            RETRY SYNC
+            RESTORE SYNC
           </button>
         </div>
       )}
 
-      {/* AI Overlay Rendering - Respect Global Toggle */}
+      {/* AI Overlay Rendering */}
       {showOverlay && globalAiEnabled && (
         <AiOverlay 
           analysis={analysis} 
@@ -270,53 +270,52 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       )}
 
       {/* Header Info Overlay */}
-
-      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-30 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 p-5 flex justify-between items-start z-30 pointer-events-none">
         <div className="flex gap-2">
-          <span className="bg-black/80 px-2 py-1 text-[10px] font-bold border border-white/20 text-white uppercase tracking-wider">
+          <span className="bg-slate-900/60 backdrop-blur-md px-3 py-1 text-[10px] font-black border border-white/10 text-white uppercase tracking-widest rounded-lg">
             {camera.name.split(' ')[0]} {camera.name.split(' ')[1]}
           </span>
-          <span className="bg-red-900/80 px-2 py-1 text-[10px] font-bold border border-red-500/50 text-white flex items-center gap-1">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-            LIVE AI
+          <span className="bg-indigo-500/20 backdrop-blur-md px-3 py-1 text-[10px] font-black border border-indigo-500/30 text-indigo-400 flex items-center gap-2 rounded-lg">
+            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_#6366f1]" />
+            AI_FEED
           </span>
         </div>
 
-        <div className="flex flex-col items-end text-[9px] font-mono text-gray-400 bg-black/40 p-1 backdrop-blur-sm border border-white/5">
-          <div>COORD: {camera.lat.toFixed(4)}° N, {Math.abs(camera.lng).toFixed(4)}° W</div>
-          <div className="text-cyan-400">FLOW: {analysis ? analysis.flow : (isAnalyzing ? 'SYNCING...' : 'WAITING')}</div>
+        <div className="flex flex-col items-end text-[9px] font-mono text-slate-400 bg-slate-900/60 px-3 py-1.5 backdrop-blur-md border border-white/5 rounded-lg">
+          <div className="tracking-tighter">COORD: {camera.lat.toFixed(4)}N {Math.abs(camera.lng).toFixed(4)}W</div>
+          <div className="text-emerald-400 font-bold tracking-widest mt-0.5">FLOW: {analysis ? analysis.flow : (isAnalyzing ? 'SYNCING...' : 'WAITING')}</div>
         </div>
       </div>
 
       {/* Bottom Summary Bar */}
       {globalAiEnabled && analysis && showOverlay && (
-        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end z-30 pointer-events-none">
+        <div className="absolute bottom-5 left-5 right-5 flex justify-between items-end z-30 pointer-events-none">
           <div className="max-w-[70%]">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-cyan-400 bg-cyan-900/30 px-1.5 py-0.5 rounded text-[8px] font-bold border border-cyan-500/30 animate-pulse uppercase">
-                Flow Analysis
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded text-[9px] font-black border border-emerald-500/20 uppercase tracking-[0.2em]">
+                FLOW_METRIC
               </span>
-              <span className="text-white bg-black/60 px-1.5 py-0.5 rounded text-[8px] border border-white/10 uppercase">
+              <span className="text-white bg-indigo-600/60 px-2 py-0.5 rounded text-[9px] font-black border border-white/10 uppercase tracking-[0.2em] shadow-lg">
                 {analysis.flow}
               </span>
             </div>
-            <div className="text-white text-[11px] font-medium leading-tight drop-shadow-lg uppercase tracking-wide">
+            <div className="text-white text-[12px] font-black leading-tight drop-shadow-2xl uppercase tracking-widest bg-slate-900/40 backdrop-blur-sm p-3 border border-white/5 rounded-2xl">
               {analysis.summary}
             </div>
           </div>
           
-          <div className="h-10 w-24 bg-black/40 backdrop-blur-sm border border-white/10 p-1 flex flex-col justify-between">
-            <div className="text-[7px] uppercase text-gray-500 leading-none">Sync Window</div>
-            <div className="text-[10px] text-cyan-400 font-mono text-right">
+          <div className="h-12 w-32 bg-slate-900/60 backdrop-blur-md border border-white/10 p-2 flex flex-col justify-between rounded-xl">
+            <div className="themed-label leading-none mb-1 opacity-50">Sync Window</div>
+            <div className="text-[11px] text-emerald-400 font-mono text-right font-bold">
               {lastAnalysisTime > 0 && getCooldownRemaining() > 0 
                 ? `${Math.floor(getCooldownRemaining() / 60000)}m ${Math.floor((getCooldownRemaining() % 60000) / 1000)}s` 
                 : 'READY'}
             </div>
-            <div className="w-full bg-white/5 h-1">
+            <div className="w-full bg-white/5 h-1.5 rounded-full mt-1 overflow-hidden">
               <motion.div 
                 initial={false}
                 animate={{ width: `${(1 - getCooldownRemaining() / refreshInterval) * 100}%` }}
-                className="h-full bg-cyan-500"
+                className="h-full bg-emerald-500 shadow-[0_0_10px_#10b981]"
               />
             </div>
           </div>
@@ -324,40 +323,39 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       )}
 
       {!globalAiEnabled && (
-        <div className="absolute bottom-4 left-4 z-30 pointer-events-none">
-          <span className="text-red-500/50 bg-red-950/20 px-2 py-1 border border-red-500/20 text-[9px] font-bold uppercase tracking-widest">
-            Network AI Offline
+        <div className="absolute bottom-5 left-5 z-30 pointer-events-none">
+          <span className="text-slate-500 bg-slate-950/40 px-3 py-1.5 border border-white/5 text-[9px] font-black uppercase tracking-[0.3em] rounded-full backdrop-blur-sm">
+            AI_ENGINE_OFFLINE
           </span>
         </div>
       )}
 
       {/* UI Controls */}
-      <div className={`absolute right-4 top-16 flex flex-col gap-2 transition-opacity duration-300 z-40 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`absolute right-5 top-20 flex flex-col gap-3 transition-opacity duration-300 z-40 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <button 
           onClick={() => setShowOverlay(!showOverlay)}
-          className={`p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md ${!showOverlay ? 'text-red-500' : ''}`}
+          className={`p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl ${!showOverlay ? 'text-red-500 border-red-500/30' : ''}`}
           title="Toggle AI HUD"
         >
-          {showOverlay ? <Eye size={14} /> : <EyeOff size={14} />}
+          {showOverlay ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
 
         <button 
           onClick={toggleFullscreen}
-          className="p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md"
+          className="p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl"
           title="Toggle Fullscreen"
         >
-          <Maximize2 size={14} />
+          <Maximize2 size={16} />
         </button>
 
         <div className="relative">
           <button 
             onClick={() => setShowMenu(!showMenu)}
-            className="p-2 bg-black/80 border border-white/10 text-gray-400 hover:text-white hover:border-cyan-400 transition-all rounded backdrop-blur-md"
+            className="p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl"
             title="Switch Camera"
           >
-            <MoreVertical size={14} />
+            <MoreVertical size={16} />
           </button>
-
 
           {/* Floating Context Menu */}
           <AnimatePresence>
@@ -366,50 +364,50 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="fixed bg-[#121212] border border-white/20 shadow-2xl z-[9999] min-w-[240px] overflow-hidden backdrop-blur-md"
+                className="fixed bg-slate-900/90 border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-[9999] min-w-[280px] overflow-hidden backdrop-blur-2xl rounded-3xl"
                 style={{ 
-                  top: Math.min(menuPos.y, window.innerHeight - 300),
-                  left: Math.min(menuPos.x, window.innerWidth - 240)
+                  top: Math.min(menuPos.y, window.innerHeight - 400),
+                  left: Math.min(menuPos.x, window.innerWidth - 300)
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="bg-[#1a1a1a] px-3 py-2 border-b border-white/10 flex items-center justify-between">
-                  <span className="text-[10px] text-cyan-400 font-bold tracking-widest uppercase">Select Node</span>
+                <div className="bg-white/5 px-5 py-4 border-b border-white/5 flex items-center justify-between">
+                  <span className="text-[11px] text-indigo-400 font-black tracking-[0.3em] uppercase">Sensor Selection</span>
                   <button 
                     onClick={() => setShowMenu(false)}
-                    className="text-[9px] text-gray-500 hover:text-white"
+                    className="text-[10px] text-slate-500 hover:text-white font-black"
                   >
-                    ESC
+                    CLOSE
                   </button>
                 </div>
                 
-                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
                   {availableCameras.map(cam => (
                     <button
                       key={cam.id}
                       onClick={() => handleSwitch(cam)}
-                      className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between transition-colors border-b border-white/5 last:border-0 ${
+                      className={`w-full text-left px-4 py-3 text-xs flex items-center justify-between transition-all rounded-2xl mb-1 ${
                         cam.id === camera.id 
-                        ? 'bg-cyan-500/10 text-white' 
-                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                        ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       <div className="flex flex-col">
-                        <span className={`font-medium ${cam.id === camera.id ? 'text-cyan-400' : ''}`}>{cam.name}</span>
-                        <span className="text-[9px] opacity-40 uppercase truncate max-w-[160px]">{cam.description}</span>
+                        <span className={`font-black tracking-tight ${cam.id === camera.id ? 'text-white' : ''}`}>{cam.name}</span>
+                        <span className="text-[9px] opacity-60 uppercase tracking-[0.1em] truncate max-w-[180px] mt-0.5">{cam.location}</span>
                       </div>
-                      {cam.id === camera.id && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+                      {cam.id === camera.id && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
                     </button>
                   ))}
                 </div>
                 
-                <div className="bg-black/40 px-3 py-2 flex flex-col gap-1 border-t border-white/10">
+                <div className="bg-black/20 px-5 py-3 flex flex-col gap-1 border-t border-white/5">
                   <button 
                     onClick={() => { setShowOverlay(!showOverlay); setShowMenu(false); }}
-                    className="w-full text-left text-[9px] text-gray-500 hover:text-white uppercase flex items-center gap-2"
+                    className="w-full text-left text-[10px] font-black tracking-widest text-slate-500 hover:text-white uppercase flex items-center gap-3 py-2 transition-colors"
                   >
-                    {showOverlay ? <Eye size={10} /> : <EyeOff size={10} />}
-                    {showOverlay ? 'Hide HUD' : 'Show HUD'}
+                    {showOverlay ? <Eye size={12} /> : <EyeOff size={12} />}
+                    {showOverlay ? 'Deactivate HUD' : 'Activate HUD'}
                   </button>
                 </div>
               </motion.div>
@@ -418,11 +416,11 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
         </div>
       </div>
 
-      {/* Decorative Brackets */}
-      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-neon-green/30 pointer-events-none" />
-      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-neon-green/30 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-neon-green/30 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-neon-green/30 pointer-events-none" />
+      {/* Decorative Accents */}
+      <div className="absolute top-4 left-4 w-12 h-12 border-t border-l border-indigo-500/20 pointer-events-none rounded-tl-2xl" />
+      <div className="absolute top-4 right-4 w-12 h-12 border-t border-r border-indigo-500/20 pointer-events-none rounded-tr-2xl" />
+      <div className="absolute bottom-4 left-4 w-12 h-12 border-b border-l border-indigo-500/20 pointer-events-none rounded-bl-2xl" />
+      <div className="absolute bottom-4 right-4 w-12 h-12 border-b border-r border-indigo-500/20 pointer-events-none rounded-br-2xl" />
     </div>
   );
 };
