@@ -331,90 +331,118 @@ export const CameraPlayer: React.FC<CameraPlayerProps> = ({
       )}
 
       {/* UI Controls */}
-      <div className={`absolute right-5 top-20 flex flex-col gap-3 transition-opacity duration-300 z-40 ${isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`absolute right-4 top-4 flex flex-col gap-2 transition-opacity duration-200 z-40 ${isHovered || showMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <button 
-          onClick={() => setShowOverlay(!showOverlay)}
-          className={`p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl ${!showOverlay ? 'text-red-500 border-red-500/30' : ''}`}
-          title="Toggle AI HUD"
+          onClick={(e) => { e.stopPropagation(); setShowOverlay(!showOverlay); }}
+          className={`p-2.5 bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-xl backdrop-blur-xl shadow-xl ${!showOverlay ? 'text-red-400 border-red-500/30' : ''}`}
+          title="Toggle HUD"
         >
-          {showOverlay ? <Eye size={16} /> : <EyeOff size={16} />}
+          {showOverlay ? <Eye size={15} /> : <EyeOff size={15} />}
         </button>
 
         <button 
-          onClick={toggleFullscreen}
-          className="p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl"
+          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+          className="p-2.5 bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-xl backdrop-blur-xl shadow-xl"
           title="Toggle Fullscreen"
         >
-          <Maximize2 size={16} />
+          <Maximize2 size={15} />
         </button>
 
-        <div className="relative">
-          <button 
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-3 bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-2xl backdrop-blur-xl shadow-xl"
-            title="Switch Camera"
-          >
-            <MoreVertical size={16} />
-          </button>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            const rect = e.currentTarget.getBoundingClientRect();
+            setMenuPos({ x: rect.left - 260, y: rect.bottom + 8 });
+            setShowMenu(!showMenu);
+          }}
+          className={`p-2.5 bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:border-indigo-500/50 transition-all rounded-xl backdrop-blur-xl shadow-xl ${showMenu ? 'bg-indigo-600 text-white border-indigo-400' : ''}`}
+          title="Select Camera (or Right-Click feed)"
+        >
+          <MoreVertical size={15} />
+        </button>
+      </div>
 
-          {/* Floating Context Menu */}
-          <AnimatePresence>
-            {showMenu && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="fixed bg-slate-900/90 border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] z-[9999] min-w-[280px] overflow-hidden backdrop-blur-2xl rounded-3xl"
-                style={{ 
-                  top: Math.min(menuPos.y, window.innerHeight - 400),
-                  left: Math.min(menuPos.x, window.innerWidth - 300)
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="bg-white/5 px-5 py-4 border-b border-white/5 flex items-center justify-between">
-                  <span className="text-[11px] text-indigo-400 font-black tracking-[0.3em] uppercase">Sensor Selection</span>
-                  <button 
-                    onClick={() => setShowMenu(false)}
-                    className="text-[10px] text-slate-500 hover:text-white font-black"
-                  >
-                    CLOSE
-                  </button>
-                </div>
-                
-                <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
-                  {availableCameras.map(cam => (
+      {/* Floating Camera Selection Context Menu (Triggered by Right-Click or Menu Button) */}
+      <AnimatePresence>
+        {showMenu && (
+          <div 
+            className="fixed inset-0 z-[9998] cursor-default"
+            onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setShowMenu(false); }}
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -5 }}
+              transition={{ duration: 0.15 }}
+              className="fixed bg-slate-900/95 border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[9999] min-w-[280px] max-w-[320px] overflow-hidden backdrop-blur-2xl rounded-2xl cursor-default"
+              style={{ 
+                top: Math.max(10, Math.min(menuPos.y, window.innerHeight - 440)),
+                left: Math.max(10, Math.min(menuPos.x, window.innerWidth - 300))
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => e.stopPropagation()}
+            >
+              <div className="bg-slate-800/80 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                <span className="text-[11px] text-indigo-400 font-black tracking-wider uppercase flex items-center gap-2">
+                  <Navigation size={13} /> Select Camera
+                </span>
+                <button 
+                  onClick={() => setShowMenu(false)}
+                  className="text-[10px] text-slate-400 hover:text-white font-bold bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded transition-colors"
+                >
+                  ESC
+                </button>
+              </div>
+              
+              <div className="max-h-[340px] overflow-y-auto custom-scrollbar p-2">
+                {availableCameras.map(cam => {
+                  const isCurrent = cam.id === camera.id;
+                  return (
                     <button
                       key={cam.id}
                       onClick={() => handleSwitch(cam)}
-                      className={`w-full text-left px-4 py-3 text-xs flex items-center justify-between transition-all rounded-2xl mb-1 ${
-                        cam.id === camera.id 
-                        ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
-                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                      className={`w-full text-left px-3.5 py-2.5 text-xs flex items-center justify-between transition-all rounded-xl mb-1 ${
+                        isCurrent 
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' 
+                        : 'text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                     >
-                      <div className="flex flex-col">
-                        <span className={`font-black tracking-tight ${cam.id === camera.id ? 'text-white' : ''}`}>{cam.name}</span>
-                        <span className="text-[9px] opacity-60 uppercase tracking-[0.1em] truncate max-w-[180px] mt-0.5">{cam.location}</span>
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className={`font-bold tracking-tight text-[12px] truncate ${isCurrent ? 'text-white' : 'text-slate-200'}`}>
+                          {cam.name}
+                        </span>
+                        <span className="text-[9px] opacity-70 uppercase tracking-wider truncate mt-0.5">
+                          {cam.description || cam.direction}
+                        </span>
                       </div>
-                      {cam.id === camera.id && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                      {isCurrent && (
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_#34d399]" />
+                      )}
                     </button>
-                  ))}
-                </div>
-                
-                <div className="bg-black/20 px-5 py-3 flex flex-col gap-1 border-t border-white/5">
-                  <button 
-                    onClick={() => { setShowOverlay(!showOverlay); setShowMenu(false); }}
-                    className="w-full text-left text-[10px] font-black tracking-widest text-slate-500 hover:text-white uppercase flex items-center gap-3 py-2 transition-colors"
-                  >
-                    {showOverlay ? <Eye size={12} /> : <EyeOff size={12} />}
-                    {showOverlay ? 'Deactivate HUD' : 'Activate HUD'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+                  );
+                })}
+              </div>
+              
+              <div className="bg-slate-950/60 px-4 py-2 flex items-center justify-between border-t border-white/10 text-[10px] text-slate-400">
+                <button 
+                  onClick={() => { setShowOverlay(!showOverlay); setShowMenu(false); }}
+                  className="hover:text-white uppercase flex items-center gap-1.5 font-bold transition-colors"
+                >
+                  {showOverlay ? <EyeOff size={12} /> : <Eye size={12} />}
+                  {showOverlay ? 'Hide HUD' : 'Show HUD'}
+                </button>
+                <button 
+                  onClick={() => { toggleFullscreen(); setShowMenu(false); }}
+                  className="hover:text-white uppercase flex items-center gap-1.5 font-bold transition-colors"
+                >
+                  <Maximize2 size={12} /> Fullscreen
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Decorative Accents */}
       <div className="absolute top-4 left-4 w-12 h-12 border-t border-l border-indigo-500/20 pointer-events-none rounded-tl-2xl" />
